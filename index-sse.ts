@@ -1,6 +1,6 @@
+import express, {Request, Response} from "express"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {z} from "zod"
 import axios from "axios"
 import * as dotenv from "dotenv"
@@ -69,9 +69,9 @@ server.tool(
     async ({location}) => {
         const url = "https://api.map.baidu.com/weather/v1/"
         let params = {
-            location,
-            data_type: "all",
-            ak: process.env.BAIDU_MAP_API_KEY as string
+                location,
+                data_type: "all",
+                ak: process.env.BAIDU_MAP_API_KEY as string
         }
         const res = await axios.get(url,{
             params
@@ -89,14 +89,28 @@ server.tool(
     }
 )
 
-// 启动MCP服务器
-async function startServer(){
-    // 本地开发使用stdio传输
-    const transport = new StdioServerTransport()
-    await server.connect(transport)
-    console.log("MCP服务已启动（stdio模式）")
-}
-startServer().catch(err=>{
-    console.error("MCP服务器启动失败：",err)
-    process.exit(1)
-})
+const app = express()
+const transports:{[sessionId:string]:SSEServerTransport} = {}
+app.get("/sse", async (_: Request, res: Response) => {
+    const transport = new SSEServerTransport('/messages', res);
+    transports[transport.sessionId] = transport;
+    res.on("close", () => {
+        delete transports[transport.sessionId];
+    });
+    await server.connect(transport);
+});
+
+app.post("/messages", async (req: Request, res: Response) => {
+    const sessionId = req.query.sessionId as string;
+    const transport = transports[sessionId];
+    if (transport) {
+        await transport.handlePostMessage(req, res);
+    } else {
+        res.status(400).send('No transport found for sessionId');
+    }
+});
+
+const port = 8080;
+app.listen(port, () => {
+    console.log(`Mcp Server is running on port ${port}`);
+});
