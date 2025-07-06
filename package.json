@@ -1,10 +1,11 @@
 {
-  "name": "baidumap-mcp",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "lwp-baidumap-mcp",
+  "version": "1.0.3",
+  "main": "build/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [],
   "author": "",
@@ -20,10 +21,10 @@
   },
   "type": "module",
   "bin": {
-    "baidumap-mcp": "./build/index.js"
+    "lwp-baidumap-mcp": "./build/index.js"
   },
   "files": [
-    "build"
+    "build/"
   ],
   "devDependencies": {
     "@types/express": "^5.0.3"
