@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js"
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js"
 import cors from 'cors';
-import server from "./src/mcp/server.js"
+import createMcpServer from "./src/mcp/server.js"
 
 const app = express()
 app.use(express.json())
@@ -19,6 +19,12 @@ const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
 // 处理客户端请求
 app.post('/mcp', async (req: Request, res: Response) => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined
+    let ak = req.query.ak as string || req.headers.ak as string;
+    if(!ak){
+        res.status(400).send('请提供ak');
+        return;
+    }
+    let server = createMcpServer(ak);
 
     let transport: StreamableHTTPServerTransport
 

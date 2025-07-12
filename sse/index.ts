@@ -1,13 +1,26 @@
 import express, { Request, Response } from "express"
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import server from "./src/mcp/server.js"
+import createMcpServer from "./src/mcp/server.js"
+
 
 const app = express()
 const transports: { [sessionId: string]: SSEServerTransport } = {}
-app.get("/sse", async (_: Request, res: Response) => {
+const mcpServers: { [ak: string]: ReturnType<typeof createMcpServer> } = {}
+app.get("/sse", async (req: Request, res: Response) => {
+    let ak = req.query.ak as string || req.headers.ak as string;
+    if(!ak){
+        res.status(400).send('请提供ak');
+        return;
+    }
+    let server = mcpServers[ak];
+    if(!server){
+        server = createMcpServer(ak);
+        mcpServers[ak] = server;
+    }
     const transport = new SSEServerTransport('/messages', res);
     transports[transport.sessionId] = transport;
     res.on("close", () => {
+        delete mcpServers[ak];
         delete transports[transport.sessionId];
     });
     await server.connect(transport);

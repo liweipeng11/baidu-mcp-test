@@ -4,7 +4,10 @@
   "main": "build/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js",
+    "start:stdio": "node build/stdio/index.js",
+    "start:sse": "node build/sse/index.js",
+    "start:stateless": "node build/streamablehttp/stateless.js",
+    "start:stateful": "node build/streamablehttp/stateful.js",
     "prepublishOnly": "npm run build"
   },
   "keywords": [],
